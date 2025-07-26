@@ -1,0 +1,1149 @@
+<!DOCTYPE html>
+<html lang="bn">
+  <head>
+    <script>
+      document.addEventListener("contextmenu", (event) =>
+        event.preventDefault()
+      );
+      document.addEventListener("keydown", (event) => {
+        if (
+          (event.ctrlKey &&
+            ["u", "s", "i", "j"].includes(event.key.toLowerCase())) ||
+          event.key === "F12"
+        ) {
+          event.preventDefault();
+        }
+      });
+    </script>
+
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Online Exam</title>
+    <!-- Chart.js CDN -->
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&display=swap");
+
+      body {
+        font-family: "Hind Siliguri", sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f4f4f4;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+      }
+
+      .container {
+        font-family: "Hind Siliguri", sans-serif;
+        width: 100%;
+        margin: auto;
+        background-color: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        min-height: 80vh;
+      }
+
+      .exam-content {
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      h1 {
+        color: #1b0b54;
+        text-align: center;
+        margin-bottom: 10px;
+      }
+
+      #timer {
+        font-size: 20px;
+        color: #1b0b54;
+        margin-bottom: 5px;
+        font-weight: normal;
+        text-align: center;
+      }
+
+      #exam-info {
+        font-size: 16px;
+        color: black;
+        margin-bottom: 20px;
+        text-align: center;
+      }
+
+      #exam {
+        width: 100%;
+        min-height: 100px;
+      }
+
+      .chart-container {
+        width: 200px;
+        height: 200px;
+        margin: 10px auto;
+        background-color: #f9f9f9;
+        border-radius: 15px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        display: none;
+        padding: 10px;
+      }
+
+      .chart-container.visible {
+        display: block;
+      }
+
+      .question-container {
+        text-align: left;
+        margin-bottom: 20px;
+        display: block;
+      }
+
+      .question-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+      }
+
+      .options {
+        margin-top: 10px;
+      }
+
+      .option {
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        padding: 5px;
+        border-radius: 5px;
+        text-transform: uppercase;
+      }
+
+      .circle {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        border: 2px solid #1b0b54;
+        margin-right: 10px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        color: #1b0b54;
+        font-weight: bold;
+        font-size: 18px;
+      }
+
+      .selected .circle {
+        background-color: #1b0b54;
+        color: white;
+      }
+
+      .correct-text {
+        color: green !important;
+      }
+
+      .incorrect-text {
+        color: #ff0800 !important;
+      }
+
+      .unattempted-text {
+        color: orange !important;
+      }
+
+      #submitBtn {
+        font-family: hind siliguri;
+        padding: 15px 30px;
+        background-color: #1b0b54;
+        color: white;
+        border: none;
+        cursor: pointer;
+        font-size: 18px;
+        font-weight: bold;
+        border-radius: 10px;
+        margin-top: 20px;
+        width: 200px;
+        transition: background-color 0.3s ease;
+      }
+
+      #submitBtn:hover {
+        background-color: #1b0b54;
+      }
+
+      .popup {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: white;
+        padding: 20px;
+        width: 300px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        border-radius: 10px;
+        text-align: center;
+        display: none;
+        z-index: 1000;
+        transition: transform 0.5s ease, opacity 0.5s ease;
+      }
+
+      .popup.slide-out {
+        transform: translate(-50%, -100%);
+        opacity: 0;
+      }
+
+      .popup-header {
+        background-color: #1b0b54;
+        color: white;
+        padding: 10px;
+        font-size: 20px;
+        font-weight: bold;
+        border-radius: 10px 10px 0 0;
+      }
+
+      .popup-body {
+        padding: 15px;
+      }
+
+      .popup-body p {
+        margin: 10px 0;
+      }
+
+      .confirm-btn {
+        font-family: hind siliguri;
+        background-color: #34c759;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .confirm-btn:hover {
+        background-color: #34c759;
+      }
+
+      .cancel-btn {
+        background-color: #ff3b30;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+        border-radius: 5px;
+        margin: 5px;
+      }
+
+      .cancel-btn:hover {
+        background-color: #e02b21;
+      }
+
+      .explanation-dropdown {
+        display: none;
+        margin-top: 10px;
+      }
+
+      .explanation-dropdown.visible {
+        display: block;
+      }
+
+      .explanation-btn {
+        background-color: #1b0b54;
+        color: white;
+        padding: 8px 15px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 14px;
+        font-family: "Hind Siliguri", sans-serif;
+        width: 40%;
+        text-align: left;
+        position: relative;
+      }
+
+      .explanation-btn:hover {
+        background-color: #1b0b54;
+      }
+
+      .explanation-btn::after {
+        content: "▼";
+        position: absolute;
+        right: 10px;
+        font-size: 12px;
+      }
+
+      .explanation-btn.active::after {
+        content: "▲";
+      }
+
+      .explanation-content {
+        display: none;
+        padding: 15px;
+        background-color: #f9f9f9;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        font-size: 14px;
+        color: #000000;
+        text-align: left;
+        max-height: 450px;
+        overflow-y: auto;
+        margin-top: 5px;
+      }
+
+      .explanation-content.visible {
+        display: block;
+      }
+
+      .explanation-content p {
+        margin: 0 0 10px 0;
+      }
+
+      .explanation-content ul {
+        margin: 0;
+        padding-left: 20px;
+      }
+
+      .explanation-content li {
+        margin-bottom: 5px;
+      }
+
+      .explanation-content strong {
+        color: #1b0b54;
+      }
+
+      .explanation-label {
+        font-weight: bold;
+        color: #1b0b54;
+        margin-bottom: 10px;
+        display: block;
+      }
+
+      .locked .option {
+        pointer-events: none;
+        cursor: default;
+      }
+
+      .locked .option.selected {
+        pointer-events: none;
+        cursor: default;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container" id="examContainer">
+      <div class="exam-content">
+        <h1>ইংরেজী অনুশীলন</h1>
+        <div id="timer"></div>
+        <div id="exam-info"></div>
+        <div class="chart-container">
+          <canvas id="scoreChart"></canvas>
+        </div>
+        <div id="exam">
+          <!-- Questions will be generated dynamically -->
+        </div>
+        <button id="submitBtn">সাবমিট</button>
+      </div>
+    </div>
+
+    <div class="popup" id="scorePopup">
+      <div class="popup-header">তোমার স্কোর</div>
+      <div class="popup-body">
+        <p><strong>মোট প্রশ্ন:</strong> <span id="totalQuestions"></span></p>
+        <p>
+          <strong>উত্তর দিয়েছো:</strong>
+          <span style="color: #000000" id="answered"></span>
+        </p>
+        <p>
+          <strong>সঠিক উত্তর:</strong>
+          <span style="color: #0ab853" id="correctAnswers"></span>
+        </p>
+        <p>
+          <strong>ভুল উত্তর:</strong>
+          <span style="color: #f81010" id="wrongAnswers"></span>
+        </p>
+        <p>
+          <strong>অনুত্তরিত:</strong>
+          <span style="color: #ffc801" id="unanswered"></span>
+        </p>
+        <p><strong>তোমার চূড়ান্ত স্কোর:</strong></p>
+        <h2 style="color: #1b0b54"><span id="finalScore"></span></h2>
+        <form id="scoreForm" action="https://formspree.io/f/xpby" method="POST">
+          <input type="hidden" name="userID" id="formUserID" />
+          <input type="hidden" name="finalScore" id="formFinalScore" />
+          <input type="hidden" name="correctAnswers" id="formCorrectAnswers" />
+          <input type="hidden" name="wrongAnswers" id="formWrongAnswers" />
+          <input type="hidden" name="unanswered" id="formUnanswered" />
+          <button
+            type="submit"
+            class="confirm-btn"
+            style="background-color: #1b0b54"
+          >
+            <b>ওকে</b>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <div class="popup" id="confirmPopup">
+      <div class="popup-header">কনফার্ম করো</div>
+      <div class="popup-body">
+        <p>
+          ভালো করে দেখে নাও! <br />
+          পরীক্ষা শেষ করতে চাও তো?
+        </p>
+        <button class="confirm-btn" onclick="confirmSubmit()">
+          <b>হ্যাঁ</b>
+        </button>
+        <button class="cancel-btn" onclick="cancelSubmit()"><b>না</b></button>
+      </div>
+    </div>
+
+    <script>
+      let chartInstance = null;
+
+      document.addEventListener("DOMContentLoaded", function () {
+        console.log("DOM fully loaded and parsed");
+        const examContainer = document.getElementById("examContainer");
+        if (!examContainer) {
+          console.error("Exam container not found!");
+          return;
+        }
+        try {
+          sessionStorage.setItem("isLoggedIn", "true");
+          sessionStorage.setItem("userID", "anonymous");
+          console.log(
+            "Session storage set: isLoggedIn = true, userID = anonymous"
+          );
+        } catch (e) {
+          console.error("Session storage error:", e);
+        }
+        examContainer.style.display = "block";
+        console.log("Exam container displayed");
+        startTimer();
+        generateQuestions();
+
+        window.addEventListener("beforeunload", function (event) {
+          if (
+            examContainer.style.display === "block" &&
+            sessionStorage.getItem("isLoggedIn") === "true"
+          ) {
+            autoSubmitScore();
+          }
+        });
+      });
+
+      const questions = [
+        {
+          id: 1,
+          question:
+            "Which one of the following is the correct negative form of the sentence? 'Every mother loves her child'.",
+          options: {
+            a: "Every mother does not like her child.",
+            b: "There is no mother who does not like her child.",
+            c: "Every mother hates her child.",
+            d: "There is no mother but loves her child.",
+          },
+          correct: "d",
+          explanation:
+            "<p>Sentence Transformation এর ক্ষেত্রে অর্থের পরিবর্তন না ঘটিয়ে এক ধরণের বাক্যকে অন্য ধরণের বাক্যে রূপান্তর করা হয়। 'Every + noun' যুক্ত Affirmative Sentence কে Negative করার সময় 'There is no + noun + but + verb এর বাকি অংশ' অথবা 'There is no + noun + who does not + verb এর বাকি অংশ' নিয়মটি অনুসরণ করা হয়।</p><ul><li>(A) 'Every mother does not like her child.' এই বাক্যটির অর্থ 'প্রত্যেক মা তার সন্তানকে পছন্দ করে না', যা মূল অর্থের বিপরীত।</li><li>(B) 'There is no mother who does not like her child.' এটি ব্যাকরণগতভাবে সঠিক হলেও, প্রদত্ত বিকল্পগুলির মধ্যে 'but' ব্যবহার করে আরও সংক্ষেপিত ও প্রচলিত রূপ রয়েছে।</li><li>(C) 'Every mother hates her child.' এই বাক্যটির অর্থ 'প্রত্যেক মা তার সন্তানকে ঘৃণা করে', যা মূল অর্থের সম্পূর্ণ বিপরীত।</li><li>(D) 'There is no mother but loves her child.' এই বাক্যটির অর্থ 'এমন কোনো মা নেই যে তার সন্তানকে ভালোবাসে না', যা মূল বাক্য 'Every mother loves her child' এর সাথে অর্থের দিক থেকে সামঞ্জস্যপূর্ণ। 'but' এখানে 'who does not' এর সমার্থক হিসেবে ব্যবহৃত হয়েছে।</li></ul>",
+        },
+        {
+          id: 2,
+          question:
+            "Which one of the following is the correct affirmative form of the sentence? 'You cannot but do it.'",
+          options: {
+            a: "You can do it.",
+            b: "You shall do it.",
+            c: "You should do it.",
+            d: "You must do it.",
+          },
+          correct: "d",
+          explanation:
+            "<p>'Cannot but' এর অর্থ হলো 'না করে পারা যায় না' বা 'অবশ্যই করতে হয়'। এটি বাধ্যবাধকতা বোঝায়। 'Must' দ্বারাও একই ধরনের বাধ্যবাধকতা বোঝানো হয়। তাই 'cannot but' যুক্ত Negative Sentence কে Affirmative করতে 'must' ব্যবহার করা হয় এবং 'but' এর পরে মূল verb এর base form বসে।</p><ul><li>(A) 'You can do it.' এর অর্থ 'তুমি এটা করতে পারো', যা মূল বাক্যের বাধ্যবাধকতা প্রকাশ করে না।</li><li>(B) 'You shall do it.' এর অর্থ 'তুমি এটা করবে', যা বাধ্যবাধকতা বা অনিবার্যতার চেয়ে প্রতিজ্ঞা বা নির্দেশ বোঝায়।</li><li>(C) 'You should do it.' এর অর্থ 'তোমার এটা করা উচিত', যা বাধ্যবাধকতা বোঝায় না, বরং পরামর্শ বোঝায়।</li><li>(D) 'You must do it.' এর অর্থ 'তোমাকে এটা অবশ্যই করতে হবে', যা মূল বাক্য 'You cannot but do it' এর সাথে অর্থের দিক থেকে সামঞ্জস্যপূর্ণ এবং একই ধরনের বাধ্যবাধকতা প্রকাশ করে।</li></ul>",
+        },
+        {
+          id: 3,
+          question:
+            "Which of the following is the correct interrogative form without changing the meaning of this sentence? 'The Dillingham's youngs took a mighty pride in their possession.'",
+          options: {
+            a: "Didn't the Dillingham's youngs take a mighty proud in their possession?",
+            b: "Did the Dillingham's youngs take a mighty pride in their possession?",
+            c: "Didn't the Dillingham's youngs took a mighty pride in their possession?",
+            d: "Didn't the Dillingham's youngs take a mighty pride in their possession?",
+          },
+          correct: "d",
+          explanation:
+            "<p>Assertive Sentence কে Interrogative Sentence-এ রূপান্তর করার সময় যদি Assertive Sentence টি Affirmative হয়, তবে Interrogative Sentence টি Negative-Interrogative হবে এবং যদি Assertive Sentence টি Negative হয়, তবে Interrogative Sentence টি Affirmative-Interrogative হবে। এক্ষেত্রে অর্থের পরিবর্তন করা যাবে না। প্রদত্ত বাক্যটি Past Indefinite Tense-এ আছে।</p><ul><li>(A) 'Didn't the Dillingham's youngs take a mighty proud in their possession?' এখানে 'proud' (adjective) এর পরিবর্তে 'pride' (noun) হবে।</li><li>(B) 'Did the Dillingham's youngs take a mighty pride in their possession?' এই বাক্যটি অর্থের পরিবর্তন ঘটাচ্ছে, কারণ এটি Affirmative Interrogative। মূল Assertive Sentence টি Affirmative, তাই Interrogative টি Negative Interrogative হতে হবে।</li><li>(C) 'Didn't the Dillingham's youngs took a mighty pride in their possession?' এখানে 'took' ভুল, কারণ 'did' বা 'didn't' এর পর verb এর base form 'take' বসে।</li><li>(D) 'Didn't the Dillingham's youngs take a mighty pride in their possession?' এটি সঠিক Interrogative form। এখানে 'didn't' ব্যবহার করা হয়েছে, যা মূল বাক্যের অর্থের পরিবর্তন না ঘটিয়ে প্রশ্ন তৈরি করেছে, এবং 'took' এর base form 'take' ব্যবহৃত হয়েছে।</li></ul>",
+        },
+        {
+          id: 4,
+          question: "নিচের কোনটি আদেশবোধক (Imperative) বাক্য?",
+          options: {
+            a: "Do it at once.",
+            b: "You read it attentively.",
+            c: "I wish your success in life.",
+            d: "Does he go to school?",
+          },
+          correct: "a",
+          explanation:
+            "<p>Imperative Sentence (আদেশবোধক বাক্য) হলো সেই বাক্য যা দ্বারা আদেশ, উপদেশ, অনুরোধ বা নিষেধ বোঝানো হয়। এই ধরনের বাক্যের Subject (সাধারণত 'You') উহ্য থাকে এবং verb এর base form দিয়ে বাক্য শুরু হয়।</p><ul><li>(A) 'Do it at once.' (এটি এখনই করো।) এটি একটি আদেশ প্রকাশ করছে এবং verb এর base form দিয়ে শুরু হয়েছে। তাই এটি একটি Imperative Sentence।</li><li>(B) 'You read it attentively.' (তুমি এটি মনোযোগ সহকারে পড়ো।) এটি একটি Declarative Sentence, যেখানে Subject 'You' স্পষ্ট উল্লেখ আছে।</li><li>(C) 'I wish your success in life.' (আমি তোমার জীবনে সাফল্য কামনা করি।) এটি একটি Optative Sentence বা Declarative Sentence যেখানে ইচ্ছা প্রকাশ করা হয়েছে।</li><li>(D) 'Does he go to school?' (সে কি স্কুলে যায়?) এটি একটি Interrogative Sentence (প্রশ্নবোধক বাক্য)।</li></ul>",
+        },
+        {
+          id: 5,
+          question:
+            "Which of the following is the correct affirmative sentence?",
+          options: {
+            a: "You are very fortunate.",
+            b: "He was the only man alive on a wide sea.",
+            c: "How big they are!",
+            d: "The first day in Dieppe is very exciting.",
+          },
+          correct: "b",
+          explanation:
+            "<p>একটি Affirmative Sentence (হ্যাঁ-বোধক বাক্য) হলো সেই বাক্য যা ইতিবাচক তথ্য প্রদান করে এবং কোনো নেতিবাচক শব্দ (যেমন no, not, never ইত্যাদি) ব্যবহার করে না।</p><ul><li>(A) 'You are very fortunate.' এটি একটি Affirmative Sentence।</li><li>(B) 'He was the only man alive on a wide sea.' এটি একটি Affirmative Sentence। 'only' একটি Adverb যা নেতিবাচক অর্থ প্রকাশ করে না, বরং সীমাবদ্ধতা বোঝায়। এই বাক্যে কোনো নেতিবাচক শব্দ নেই।</li><li>(C) 'How big they are!' এটি একটি Exclamatory Sentence।</li><li>(D) 'The first day in Dieppe is very exciting.' এটি একটি Affirmative Sentence।</li></ul><p><b>ব্যাখ্যা:</b> প্রদত্ত প্রশ্নটিতে একাধিক Affirmative Sentence রয়েছে। তবে, যদি 'Only' শব্দটিকে Negative Sentence-এ রূপান্তর করার ক্ষেত্রে ব্যবহার করার মতো ধরে নেওয়া হয়, তাহলে 'He was the only man alive on a wide sea.' বাক্যটিকে 'None but he was alive on a wide sea.' এমন Negative করা যায়। কিন্তু 'only' নিজে নেতিবাচক শব্দ নয়। যদি প্রশ্নটি এমন হতো 'Which of the following sentences can be transformed into a negative sentence using 'none but'?', তাহলে 'He was the only man alive on a wide sea.' সঠিক হতো। যেহেতু 'affirmative sentence' চাওয়া হয়েছে, এবং প্রদত্ত অপশনগুলোতে একাধিক Affirmative Sentence আছে, তাই প্রশ্নটি কিছুটা অস্পষ্ট। তবে, 'He was the only man alive on a wide sea.' বাক্যটি একটি সাধারণ Affirmative Sentence।</p>",
+        },
+        {
+          id: 6,
+          question: "Which is the correct negative sentence?",
+          options: {
+            a: "No man is immortal",
+            b: "No man is mortal",
+            c: "Man is not mortal",
+            d: "Man is immortal",
+          },
+          correct: "a",
+          explanation:
+            "<p>Negative Sentence (না-বোধক বাক্য) হলো সেই বাক্য যা নেতিবাচক অর্থ প্রকাশ করে এবং সাধারণত 'no', 'not', 'never' ইত্যাদি শব্দ ব্যবহার করে। অর্থের পরিবর্তন না ঘটিয়ে Assertive Sentence কে Negative Sentence-এ রূপান্তর করার নিয়ম এখানে প্রযোজ্য। 'Man is mortal' (মানুষ মরণশীল) বাক্যটির অর্থ অপরিবর্তিত রেখে Negative করতে হবে।</p><ul><li>(A) 'No man is immortal' (কোনো মানুষ অমর নয়) বাক্যটির অর্থ 'সকল মানুষ মরণশীল' এর সমান, যা মূল বাক্যের অর্থের সাথে সামঞ্জস্যপূর্ণ। তাই এটি সঠিক Negative Sentence।</li><li>(B) 'No man is mortal' (কোনো মানুষ মরণশীল নয়) এই বাক্যটির অর্থ মূল অর্থের বিপরীত।</li><li>(C) 'Man is not mortal' (মানুষ মরণশীল নয়) এই বাক্যটির অর্থ মূল অর্থের বিপরীত।</li><li>(D) 'Man is immortal' (মানুষ অমর) এই বাক্যটি একটি Affirmative Sentence এবং মূল অর্থের বিপরীত।</li></ul>",
+        },
+        {
+          id: 7,
+          question: "'He is the best friend.' - negative form-",
+          options: {
+            a: "No one is better than he",
+            b: "No one is best friend as him",
+            c: "No friend is better friend than him",
+            d: "No one is better friend than he.",
+          },
+          correct: "d",
+          explanation:
+            "<p>Superlative Degree কে Negative-এ রূপান্তর করার সময় অর্থের পরিবর্তন করা যাবে না। 'The + superlative degree' যুক্ত Assertive Sentence কে Negative করার নিয়ম হলো: No other + noun (superlative এর পরের অংশ) + singular verb + as/so + positive form + as + subject অথবা No other + noun (superlative এর পরের অংশ) + singular verb + comparative form + than + subject।</p><ul><li>(A) 'No one is better than he' বাক্যটি সঠিক হলেও, প্রদত্ত বাক্যে 'best friend' উল্লেখ আছে, তাই 'friend' শব্দটি Negative Form-এও থাকা উচিত।</li><li>(B) 'No one is best friend as him' ব্যাকরণগতভাবে ভুল। 'best' এর পরে 'as' বসে না এবং 'him' এর পরিবর্তে 'he' হবে।</li><li>(C) 'No friend is better friend than him' ব্যাকরণগতভাবে ভুল, 'friend' এর পুনরাবৃত্তি এবং 'him' এর পরিবর্তে 'he' হবে।</li><li>(D) 'No one is better friend than he.' এটি সঠিক Negative Form। এখানে 'No one' ব্যবহার করা হয়েছে, 'better' (comparative form) এবং 'than he' ব্যবহার করে মূল অর্থ বজায় রাখা হয়েছে।</li></ul>",
+        },
+        {
+          id: 8,
+          question:
+            "'Only the evening star has appeared.' - negative sentence-",
+          options: {
+            a: "No star but only evening star appeared",
+            b: "No star but the evening star appears",
+            c: "No star but evening star appeared",
+            d: "None but the evening star has appeared.",
+          },
+          correct: "d",
+          explanation:
+            "<p>'Only' দ্বারা যদি কোনো ব্যক্তি বা বস্তু বোঝানো হয়, তবে Negative Sentence-এ 'None but' বা 'Nothing but' ব্যবহার করা হয়। যেহেতু এখানে 'evening star' একটি বস্তু বা জিনিস, তাই 'Nothing but' ব্যবহার করা যেতে পারে, তবে 'None but' উভয় ক্ষেত্রেই ব্যবহৃত হয় যখন ব্যক্তি বা বস্তু দ্বারা 'একমাত্র' বোঝানো হয়। এছাড়াও, মূল বাক্যটি Present Perfect Tense-এ আছে।</p><ul><li>(A) 'No star but only evening star appeared' বাক্যটি ভুল। 'only' এর ব্যবহার অপ্রয়োজনীয় এবং Tense ভুল।</li><li>(B) 'No star but the evening star appears' বাক্যটির Tense ভুল (Present Simple) এবং 'No star' এর ব্যবহার পুরোপুরি সঠিক নয়।</li><li>(C) 'No star but evening star appeared' বাক্যটির Tense ভুল (Past Simple)।</li><li>(D) 'None but the evening star has appeared.' এটি সঠিক Negative Sentence। 'None but' ব্যবহার করে 'Only' এর অর্থ বজায় রাখা হয়েছে এবং মূল বাক্যের Tense (Present Perfect) ঠিক রাখা হয়েছে।</li></ul>",
+        },
+        {
+          id: 9,
+          question: "Which one of the following is an imperative sentence?",
+          options: {
+            a: "Do not go near the water.",
+            b: "Never tell a lie.",
+            c: "He is poor but honest.",
+            d: "Unless you try hard, you will fail.",
+          },
+          correct: "a, b",
+          explanation:
+            "<p>Imperative Sentence (আদেশবোধক বাক্য) হলো সেই বাক্য যা দ্বারা আদেশ, উপদেশ, অনুরোধ বা নিষেধ বোঝানো হয়। এই ধরনের বাক্যের Subject (সাধারণত 'You') উহ্য থাকে এবং verb এর base form দিয়ে বাক্য শুরু হয়, অথবা 'Do not/Never' দিয়ে নিষেধ বোঝানো হয়।</p><ul><li>(A) 'Do not go near the water.' (পানির কাছে যেও না।) এটি একটি নিষেধ নির্দেশ করছে এবং 'Do not' দিয়ে শুরু হয়েছে। তাই এটি একটি Imperative Sentence।</li><li>(B) 'Never tell a lie.' (কখনো মিথ্যা বলো না।) এটি একটি উপদেশ বা নিষেধ নির্দেশ করছে এবং 'Never' দিয়ে শুরু হয়েছে। তাই এটিও একটি Imperative Sentence।</li><li>(C) 'He is poor but honest.' (সে গরিব কিন্তু সৎ।) এটি একটি Compound Sentence।</li><li>(D) 'Unless you try hard, you will fail.' (যদি না তুমি কঠোর চেষ্টা করো, তুমি ব্যর্থ হবে।) এটি একটি Complex Sentence।</li></ul><p><b>মন্তব্য:</b> এই প্রশ্নের দুটি সঠিক উত্তর রয়েছে: (A) এবং (B)। সাধারণত, Imperative Sentence নেতিবাচক অর্থ প্রকাশ করতে 'Do not' বা 'Never' দিয়ে শুরু হয়।</p>",
+        },
+        {
+          id: 10,
+          question:
+            "'May you live long.' Which kind of sentence is the above one?",
+          options: {
+            a: "Assertive sentence",
+            b: "Imperative sentence",
+            c: "Interrogative sentence",
+            d: "Optative sentence",
+          },
+          correct: "d",
+          explanation:
+            "<p>বাক্যের প্রকারভেদ এর ওপর ভিত্তি করে এটি একটি Optative Sentence।</p><ul><li>(A) 'Assertive sentence' (বর্ণনামূলক বাক্য) হলো সেই বাক্য যা কোনো বিবৃতি বা তথ্য প্রকাশ করে।</li><li>(B) 'Imperative sentence' (আদেশবোধক বাক্য) হলো সেই বাক্য যা আদেশ, উপদেশ, অনুরোধ বা নিষেধ বোঝায়।</li><li>(C) 'Interrogative sentence' (প্রশ্নবোধক বাক্য) হলো সেই বাক্য যা প্রশ্ন করে।</li><li>(D) 'Optative sentence' (ইচ্ছাসূচক বাক্য) হলো সেই বাক্য যা কোনো ইচ্ছা, প্রার্থনা বা আশীর্বাদ প্রকাশ করে। 'May you live long' বাক্যটি দীর্ঘায়ু কামনা করছে, যা একটি ইচ্ছা বা প্রার্থনা। তাই এটি একটি Optative Sentence।</li></ul>",
+        },
+        {
+          id: 11,
+          question:
+            "'Only an honest man is happy'. Its negative form without any change of the meaning is-",
+          options: {
+            a: "An honest man is not only happy.",
+            b: "None but an honest man is happy.",
+            c: "No honest man is unhappy.",
+            d: "An honest man is not happy only.",
+          },
+          correct: "b",
+          explanation:
+            "<p>'Only' দ্বারা যদি কোনো ব্যক্তি বা বস্তুকে 'একমাত্র' বোঝানো হয়, তবে Negative Sentence-এ 'None but' বা 'Nothing but' ব্যবহার করা হয়। এখানে 'Only' দ্বারা 'an honest man' (একজন ব্যক্তি) বোঝানো হয়েছে।</p><ul><li>(A) 'An honest man is not only happy.' এই বাক্যটির অর্থ 'একজন সৎ মানুষ শুধু সুখী নয়', যা মূল অর্থের পরিবর্তন ঘটাচ্ছে।</li><li>(B) 'None but an honest man is happy.' এই বাক্যটির অর্থ 'একজন সৎ মানুষ ছাড়া আর কেউ সুখী নয়', যা মূল বাক্য 'Only an honest man is happy' এর সাথে অর্থের দিক থেকে সামঞ্জস্যপূর্ণ।</li><li>(C) 'No honest man is unhappy.' এই বাক্যটির অর্থ 'কোনো সৎ মানুষ অসুখী নয়', যা 'একজন সৎ মানুষ সুখী' এই অর্থকে প্রকাশ করে, কিন্তু 'Only' এর 'একমাত্র' ভাবটি বজায় রাখে না।</li><li>(D) 'An honest man is not happy only.' এই বাক্যটির অর্থ 'একজন সৎ মানুষ শুধু সুখী নয়', যা মূল অর্থের পরিবর্তন ঘটাচ্ছে।</li></ul>",
+        },
+        {
+          id: 12,
+          question:
+            'Identify the type of sentence: "So let freedom ring from the prodigious hilltops of New Hampshire."',
+          options: {
+            a: "Declarative",
+            b: "Imperative",
+            c: "Compound",
+            d: "Complex",
+          },
+          correct: "b",
+          explanation:
+            "<p>Imperative Sentence (আদেশবোধক বাক্য) হলো সেই বাক্য যা আদেশ, উপদেশ, অনুরোধ বা প্রস্তাব বোঝায়। প্রায়শই এই ধরনের বাক্যে Subject (You) উহ্য থাকে এবং verb এর base form দিয়ে বাক্য শুরু হয়, অথবা 'let' দিয়ে শুরু হয় যখন অন্য কাউকে কোনো কাজ করার অনুমতি বা প্রস্তাব দেওয়া হয়।</p><ul><li>(A) 'Declarative' (বর্ণনামূলক) বাক্য কোনো তথ্য বা বিবৃতি প্রকাশ করে।</li><li>(B) 'Imperative' (আদেশবোধক) বাক্য নির্দেশ বা অনুরোধ প্রকাশ করে। এখানে 'Let freedom ring...' একটি প্রস্তাব বা নির্দেশ প্রকাশ করছে যে স্বাধীনতাকে চারদিকে ছড়িয়ে দিতে হবে। এটি একটি Imperative Sentence।</li><li>(C) 'Compound' (যৌগিক) বাক্য দুটি বা ততোধিক স্বাধীন বাক্য দিয়ে গঠিত হয়।</li><li>(D) 'Complex' (জটিল) বাক্য একটি স্বাধীন বাক্য এবং এক বা একাধিক পরাধীন বাক্য দিয়ে গঠিত হয়।</li></ul>",
+        },
+        {
+          id: 13,
+          question:
+            "Choose the best interrogative form of: 'Everyone hates acid-throwing.'",
+          options: {
+            a: "Do anyone like acid-throwing?",
+            b: "Is there anyone who can hate acid-throwing?",
+            c: "Who does accept acid-throwing?",
+            d: "Does anyone like acid-throwing?",
+          },
+          correct: "d",
+          explanation:
+            "<p>Assertive Sentence কে Interrogative Sentence-এ রূপান্তর করার সময় যদি Assertive Sentence টি Affirmative হয়, তবে Interrogative Sentence টি Negative-Interrogative হবে এবং যদি Assertive Sentence টি Negative হয়, তবে Interrogative Sentence টি Affirmative-Interrogative হবে। এখানে মূল বাক্য 'Everyone hates acid-throwing' (প্রত্যেকেই অ্যাসিড-নিক্ষেপ ঘৃণা করে) একটি Affirmative Sentence, তাই Interrogative form টি Negative-Interrogative হতে হবে এবং অর্থের পরিবর্তন করা যাবে না। যখন 'Everyone' বা 'Everybody' থাকে, তখন 'Who doesn't' অথবা 'Does anyone' দিয়ে শুরু করা যেতে পারে।</p><ul><li>(A) 'Do anyone like acid-throwing?' এখানে 'Do' এর পরিবর্তে 'Does' হবে, কারণ 'anyone' Third Person Singular।</li><li>(B) 'Is there anyone who can hate acid-throwing?' এই বাক্যের অর্থ মূল বাক্যের অর্থের সাথে সম্পূর্ণ সামঞ্জস্যপূর্ণ নয় এবং গঠন কিছুটা জটিল।</li><li>(C) 'Who does accept acid-throwing?' এই বাক্যটির অর্থ 'কে অ্যাসিড-নিক্ষেপ গ্রহণ করে?', যা মূল অর্থের বিপরীত।</li><li>(D) 'Does anyone like acid-throwing?' (কেউ কি অ্যাসিড-নিক্ষেপ পছন্দ করে?) এই বাক্যটির অর্থ 'কেউ অ্যাসিড-নিক্ষেপ পছন্দ করে না' বা 'প্রত্যেকেই অ্যাসিড-নিক্ষেপ ঘৃণা করে' এর সমান, যা মূল Assertive Sentence এর অর্থের সাথে সামঞ্জস্যপূর্ণ।</li></ul>",
+        },
+        {
+          id: 14,
+          question:
+            '"May our cricket team win the world cup" Change into an assertive sentence.',
+          options: {
+            a: "I wish our cricket team to win the 'World Cup'.",
+            b: "I wish that our cricket team wins the 'World Cup'.",
+            c: "I wish that our cricket team could win the 'World Cup'.",
+            d: "I wish our cricket team can win the 'World Cup'.",
+          },
+          correct: "c",
+          explanation:
+            "<p>Optative Sentence কে Assertive Sentence-এ রূপান্তর করার সময় সাধারণত 'I wish that...' বা 'We wish that...' দিয়ে শুরু করা হয়। 'May' দ্বারা সম্ভাবনা বা ইচ্ছা প্রকাশ করা হয়।</p><ul><li>(A) 'I wish our cricket team to win the 'World Cup'.' এটি সঠিক গঠন নয়।</li><li>(B) 'I wish that our cricket team wins the 'World Cup'.' এখানে 'wins' Present Simple Tense এ আছে, যা 'May' দ্বারা প্রকাশিত সম্ভাবনার সাথে পুরোপুরি সামঞ্জস্যপূর্ণ নয়।</li><li>(C) 'I wish that our cricket team could win the 'World Cup'.' এটি সঠিক Assertive form। 'could' ব্যবহার করে 'May' দ্বারা প্রকাশিত সম্ভাবনা বা ইচ্ছাকে বোঝানো হয়েছে।</li><li>(D) 'I wish our cricket team can win the 'World Cup'.' 'can' দ্বারা সক্ষমতা বোঝায়, কিন্তু 'May' দ্বারা ইচ্ছার সাথে সম্ভাবনা বোঝায়। 'could' বেশি উপযুক্ত।</li></ul>",
+        },
+        {
+          id: 15,
+          question:
+            "Change the negative sentence into affirmative. There is nobody who will not die.",
+          options: {
+            a: "Everybody will be died.",
+            b: "Everybody would die.",
+            c: "Everybody shall die.",
+            d: "Everybody will die.",
+          },
+          correct: "d",
+          explanation:
+            "<p>Negative Sentence কে Affirmative Sentence-এ রূপান্তর করার সময় অর্থের পরিবর্তন করা যাবে না। 'There is nobody who will not die' এর অর্থ 'এমন কেউ নেই যে মরবে না' অর্থাৎ 'সবাই মরবে'।</p><ul><li>(A) 'Everybody will be died.' ব্যাকরণগতভাবে ভুল, 'be died' হয় না। 'will die' হবে।</li><li>(B) 'Everybody would die.' এখানে 'would' ব্যবহার করে Tense এর পরিবর্তন করা হয়েছে।</li><li>(C) 'Everybody shall die.' 'shall' সাধারণত প্রতিজ্ঞা বা নির্দেশ বোঝাতে ব্যবহৃত হয়, ভবিষ্যতের সাধারণ ঘটনা বোঝাতে 'will' বেশি উপযুক্ত।</li><li>(D) 'Everybody will die.' এই বাক্যটির অর্থ 'সবাই মরবে', যা মূল বাক্য 'There is nobody who will not die' এর সাথে অর্থের দিক থেকে সামঞ্জস্যপূর্ণ এবং একটি সঠিক Affirmative Sentence।</li></ul>",
+        },
+        {
+          id: 16,
+          question:
+            "Transform the sentence into negative: He had to suffer for his sins.",
+          options: {
+            a: "He has no alternative to suffer for his sins.",
+            b: "He would not but suffer for his sins.",
+            c: "He is not but suffer for his sins.",
+            d: "He could not but suffer for his sins.",
+          },
+          correct: "d",
+          explanation:
+            "<p>'Had to' দ্বারা বাধ্যবাধকতা বোঝানো হয়, যার অর্থ 'করতে হয়েছিল'। এটিকে Negative-এ রূপান্তর করার সময় 'could not but' অথবা 'could not help + verb + ing' ব্যবহার করা হয়, যেখানে অর্থের পরিবর্তন হয় না। 'could not but' মানে 'না করে পারলো না' বা 'অবশ্যই করতে হয়েছিল'।</p><ul><li>(A) 'He has no alternative to suffer for his sins.' এই বাক্যটির Tense ভুল ('has' এর পরিবর্তে 'had' হবে)।</li><li>(B) 'He would not but suffer for his sins.' 'would not but' ব্যাকরণগতভাবে সঠিক নয় এই প্রেক্ষাপটে।</li><li>(C) 'He is not but suffer for his sins.' এই বাক্যটির Tense এবং গঠন ভুল।</li><li>(D) 'He could not but suffer for his sins.' এটি সঠিক Negative Form। 'could not but' ব্যবহার করে মূল বাক্যের বাধ্যবাধকতা এবং Tense (Past) বজায় রাখা হয়েছে। এর অর্থ 'তাকে তার পাপের জন্য কষ্ট না করে উপায় ছিল না' বা 'তাকে তার পাপের জন্য অবশ্যই কষ্ট করতে হয়েছিল', যা মূল অর্থের সাথে সামঞ্জস্যপূর্ণ।</li></ul>",
+        },
+      ];
+
+      const totalQuestions = questions.length;
+      let timeLeft = Math.floor(totalQuestions / 2) * 60;
+      const timerElement = document.getElementById("timer");
+      let timerInterval;
+
+      function updateTimer() {
+        const minutes = Math.floor(timeLeft / 60);
+        const seconds = timeLeft % 60;
+        timerElement.innerText = `${toBengaliNumber(
+          minutes
+        )} মিনিট ${toBengaliNumber(seconds)} সেকেন্ড`;
+
+        if (timeLeft > 0) {
+          timeLeft--;
+        } else {
+          stopTimer();
+          confirmSubmit();
+        }
+      }
+
+      function startTimer() {
+        console.log("Starting timer");
+        timerElement.innerText = `${toBengaliNumber(
+          Math.floor(timeLeft / 60)
+        )} মিনিট ${toBengaliNumber(timeLeft % 60)} সেকেন্ড`;
+        timerInterval = setInterval(updateTimer, 1000);
+      }
+
+      function stopTimer() {
+        clearInterval(timerInterval);
+        console.log("Timer stopped");
+      }
+
+      function toBengaliNumber(num) {
+        const bengaliDigits = [
+          "০",
+          "১",
+          "২",
+          "৩",
+          "৪",
+          "৫",
+          "৬",
+          "৭",
+          "৮",
+          "৯",
+        ];
+        let numStr = num.toString();
+
+        let isNegative = num < 0;
+        if (isNegative) {
+          numStr = numStr.substring(1);
+        }
+
+        if (numStr.includes(".")) {
+          let [integerPart, decimalPart] = numStr.split(".");
+          let integerBengali = integerPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          let decimalBengali = decimalPart
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (
+            (isNegative ? "−" : "") + integerBengali + "." + decimalBengali
+          );
+        } else {
+          let integerBengali = numStr
+            .split("")
+            .map((digit) => bengaliDigits[parseInt(digit)])
+            .join("");
+          return (isNegative ? "−" : "") + integerBengali;
+        }
+      }
+
+      function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+      }
+
+      function generateQuestions() {
+        console.log("Generating questions");
+        const examContainer = document.querySelector("#exam");
+        if (!examContainer) {
+          console.error("Exam container (#exam) not found!");
+          return;
+        }
+        examContainer.innerHTML = "";
+        console.log("Questions array:", questions);
+        const shuffledQuestions = shuffleArray([...questions]);
+        shuffledQuestions.forEach((question, index) => {
+          console.log(`Generating question ${index + 1}:`, question);
+          const questionDiv = document.createElement("div");
+          questionDiv.classList.add("question-container");
+          questionDiv.setAttribute("data-question", question.id);
+          questionDiv.setAttribute("data-correct", question.correct);
+
+          let optionsHTML = "";
+          for (let option in question.options) {
+            optionsHTML += `
+                                                                          <label class="option" data-option="${option}">
+                                                                            <div class="circle">${option}</div>
+                                                                            <span class="option-text">${question.options[option]}</span>
+                                                                          </label>
+                                                                        `;
+          }
+
+          const explanationHTML = question.explanation
+            ? `<div class="explanation-dropdown">
+                                                                             <button class="explanation-btn">ব্যাখ্যা দেখো</button>
+                                                                             <div class="explanation-content">
+                                                                               <div class="explanation-label">ব্যাখ্যা:</div>
+                                                                               ${question.explanation}
+                                                                             </div>
+                                                                           </div>`
+            : "";
+
+          questionDiv.innerHTML = `
+                                                                        <p class="question-label">${
+                                                                          index +
+                                                                          1
+                                                                        }. ${
+            question.question
+          }</p>
+                                                                        <div class="options">
+                                                                          ${optionsHTML}
+                                                                        </div>
+                                                                        ${explanationHTML}
+                                                                      `;
+          examContainer.appendChild(questionDiv);
+          console.log(`Appended question ${index + 1} to exam container`);
+        });
+
+        const questionContainers = document.querySelectorAll(
+          ".question-container"
+        );
+        console.log(`Found ${questionContainers.length} question containers`);
+        questionContainers.forEach((container, idx) => {
+          console.log(`Setting question ${idx + 1} to visible`);
+          container.style.display = "block";
+        });
+
+        document.querySelectorAll(".option").forEach((option) => {
+          option.addEventListener(
+            "click",
+            function (e) {
+              e.preventDefault();
+              const parent = this.closest(".question-container");
+              if (parent.classList.contains("locked")) return;
+              parent.classList.add("locked");
+              parent.querySelectorAll(".option").forEach((el) => {
+                if (el !== this) {
+                  el.style.pointerEvents = "none";
+                  el.style.cursor = "default";
+                }
+                el.classList.remove("selected");
+              });
+              this.classList.add("selected");
+              console.log(
+                `Option selected for question ${parent.getAttribute(
+                  "data-question"
+                )}: ${this.getAttribute("data-option")}`
+              );
+            },
+            { once: true }
+          );
+        });
+
+        document.querySelectorAll(".explanation-btn").forEach((btn) => {
+          btn.addEventListener("click", function () {
+            const content = this.nextElementSibling;
+            content.classList.toggle("visible");
+            this.classList.toggle("active");
+            console.log("Toggled explanation visibility");
+          });
+        });
+
+        const examInfo = document.getElementById("exam-info");
+        if (examInfo) {
+          examInfo.innerText = `পূর্ণ নম্বরঃ ${toBengaliNumber(
+            totalQuestions
+          )}`;
+          console.log("Exam info updated");
+        } else {
+          console.error("Exam info element not found!");
+        }
+      }
+
+      function initializeChart() {
+        console.log("Initializing chart");
+        const ctx = document.getElementById("scoreChart").getContext("2d");
+        chartInstance = new Chart(ctx, {
+          type: "pie",
+          data: {
+            labels: ["ঠিক উত্তর", "ভুল উত্তর", "অনুত্তরিত"],
+            datasets: [
+              {
+                data: [0, 0, 0],
+                backgroundColor: ["#34c759", "#ff3b30", "#007aff"],
+                borderColor: "#fff",
+                borderWidth: 2,
+                hoverOffset: 10,
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: "10%",
+            layout: {
+              padding: 10,
+            },
+            plugins: {
+              legend: {
+                position: "bottom",
+                labels: {
+                  font: {
+                    family: '"Hind Siliguri", sans-serif',
+                    size: 13,
+                    weight: "bold",
+                  },
+                  color: "#333",
+                  padding: 12,
+                  boxWidth: 14,
+                  generateLabels: (chart) => {
+                    const data = chart.data;
+                    return data.labels.map((label, i) => ({
+                      text: label,
+                      font: {
+                        family: '"Hind Siliguri", sans-serif',
+                      },
+                      fillStyle: data.datasets[0].backgroundColor[i],
+                      hidden: !chart.getDataVisibility(i),
+                      index: i,
+                    }));
+                  },
+                },
+              },
+              tooltip: {
+                backgroundColor: "rgba(0, 0, 0, 0.9)",
+                cornerRadius: 6,
+                titleFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 14,
+                  weight: "bold",
+                },
+                bodyFont: {
+                  family: '"Hind Siliguri", sans-serif',
+                  size: 13,
+                },
+                padding: 10,
+                boxPadding: 5,
+              },
+            },
+            animation: {
+              animateScale: true,
+              animateRotate: true,
+              duration: 1000,
+              easing: "easeOutQuart",
+            },
+            elements: {
+              arc: {
+                borderRadius: 8,
+              },
+            },
+            onClick: (e, elements) => {
+              if (elements.length > 0) {
+                const index = elements[0].index;
+                const filter = ["correct", "wrong", "unanswered"][index];
+                filterQuestions(filter);
+              } else {
+                filterQuestions("all");
+              }
+            },
+          },
+        });
+        console.log("Chart initialized");
+      }
+
+      function filterQuestions(type) {
+        console.log(`Filtering questions by type: ${type}`);
+        document.querySelectorAll(".question-container").forEach((question) => {
+          const status = question.getAttribute("data-status");
+          if (type === "all" || status === type) {
+            question.style.display = "block";
+          } else {
+            question.style.display = "none";
+          }
+        });
+      }
+
+      function showConfirmPopup() {
+        console.log("Showing confirm popup");
+        document.getElementById("confirmPopup").style.display = "block";
+      }
+
+      function autoSubmitScore() {
+        console.log("Auto-submitting score");
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document.querySelectorAll(".question-container").forEach((question) => {
+          let correctAnswer = question.getAttribute("data-correct");
+          let selectedOption = question.querySelector(".option.selected");
+
+          if (selectedOption) {
+            answered++;
+            let chosenAnswer = selectedOption.getAttribute("data-option");
+            if (chosenAnswer === correctAnswer) {
+              score += 1;
+              correct++;
+              question.setAttribute("data-status", "correct");
+            } else {
+              score -= 0.25;
+              wrong++;
+              question.setAttribute("data-status", "wrong");
+            }
+          } else {
+            unanswered++;
+            question.setAttribute("data-status", "unanswered");
+          }
+        });
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        const formData = new FormData();
+        formData.append("userID", userID);
+        formData.append("finalScore", score.toFixed(2));
+        formData.append("correctAnswers", correct);
+        formData.append("wrongAnswers", wrong);
+        formData.append("unanswered", unanswered);
+
+        const url = "https://formspree.io/f/xpwy";
+        navigator.sendBeacon(url, formData);
+        console.log("Auto-submission sent via sendBeacon for userID:", userID);
+      }
+
+      function confirmSubmit() {
+        console.log("Confirming submission");
+        document.getElementById("confirmPopup").style.display = "none";
+        stopTimer();
+        let score = 0,
+          total = questions.length,
+          answered = 0,
+          correct = 0,
+          wrong = 0,
+          unanswered = 0;
+
+        document
+          .querySelectorAll(".question-container")
+          .forEach((question, index) => {
+            let correctAnswer = question.getAttribute("data-correct");
+            let selectedOption = question.querySelector(".option.selected");
+
+            if (selectedOption) {
+              answered++;
+              let chosenAnswer = selectedOption.getAttribute("data-option");
+              if (chosenAnswer === correctAnswer) {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("correct-text");
+                score += 1;
+                correct++;
+                question.setAttribute("data-status", "correct");
+              } else {
+                selectedOption
+                  .querySelector(".option-text")
+                  .classList.add("incorrect-text");
+                question
+                  .querySelector(
+                    `[data-option="${correctAnswer}"] .option-text`
+                  )
+                  .classList.add("correct-text");
+                score -= 0.25;
+                wrong++;
+                question.setAttribute("data-status", "wrong");
+              }
+            } else {
+              question
+                .querySelector(`[data-option="${correctAnswer}"] .option-text`)
+                .classList.add("unattempted-text");
+              unanswered++;
+              question.setAttribute("data-status", "unanswered");
+            }
+            question.style.display = "block";
+
+            const explanationDropdown = question.querySelector(
+              ".explanation-dropdown"
+            );
+            if (explanationDropdown) {
+              explanationDropdown.classList.add("visible");
+            }
+          });
+
+        const chartContainer = document.querySelector(".chart-container");
+        chartContainer.classList.add("visible");
+        if (!chartInstance) {
+          initializeChart();
+        }
+        chartInstance.data.datasets[0].data = [correct, wrong, unanswered];
+        chartInstance.update();
+        console.log("Chart updated with data:", [correct, wrong, unanswered]);
+
+        const userID = sessionStorage.getItem("userID") || "anonymous";
+        document.getElementById("totalQuestions").innerText =
+          toBengaliNumber(total);
+        document.getElementById("answered").innerText =
+          toBengaliNumber(answered);
+        document.getElementById("correctAnswers").innerText =
+          toBengaliNumber(correct);
+        document.getElementById("wrongAnswers").innerText =
+          toBengaliNumber(wrong);
+        document.getElementById("unanswered").innerText =
+          toBengaliNumber(unanswered);
+        document.getElementById("finalScore").innerText = toBengaliNumber(
+          score.toFixed(2)
+        );
+
+        document.getElementById("formUserID").value = userID;
+        document.getElementById("formFinalScore").value = score.toFixed(2);
+        document.getElementById("formCorrectAnswers").value = correct;
+        document.getElementById("formWrongAnswers").value = wrong;
+        document.getElementById("formUnanswered").value = unanswered;
+
+        document.getElementById("submitBtn").style.display = "none";
+
+        document.getElementById("scorePopup").style.display = "block";
+
+        const form = document.getElementById("scoreForm");
+        fetch(form.action, {
+          method: "POST",
+          body: new FormData(form),
+          headers: {
+            Accept: "application/json",
+          },
+        })
+          .then((response) => {
+            if (response.ok) {
+              console.log("Form submitted successfully");
+              form.reset();
+            } else {
+              console.error("Form submission failed:", response.statusText);
+            }
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+          });
+      }
+
+      function cancelSubmit() {
+        console.log("Canceling submission");
+        document.getElementById("confirmPopup").style.display = "none";
+      }
+
+      document
+        .getElementById("submitBtn")
+        .addEventListener("click", function () {
+          console.log("Submit button clicked");
+          showConfirmPopup();
+        });
+
+      function closePopup() {
+        console.log("Closing score popup");
+        const scorePopup = document.getElementById("scorePopup");
+        scorePopup.classList.add("slide-out");
+        setTimeout(() => {
+          scorePopup.style.display = "none";
+          scorePopup.classList.remove("slide-out");
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }, 500);
+      }
+
+      document
+        .getElementById("scoreForm")
+        .addEventListener("submit", function (event) {
+          event.preventDefault();
+          console.log("Score form submitted");
+          closePopup();
+        });
+    </script>
+  </body>
+</html>
